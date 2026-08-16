@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create your account</title>
+<style>
+  :root{
+    --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+    --accent:#2563eb; --good:#16a34a; --bad:#dc2626;
+    --bg:#f9fafb;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    color:var(--ink); padding:24px;
+  }
+  .card{
+    width:100%; max-width:440px; background:#fff; border:1px solid var(--line);
+    border-radius:10px; padding:36px 32px; box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  }
+  h1{font-size:1.4rem; margin:0 0 6px;}
+  .sub{color:var(--muted); font-size:0.9rem; margin-bottom:28px;}
+  .field{margin-bottom:20px; position:relative;}
+  label{display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px;}
+  input{
+    width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:6px;
+    font-size:0.95rem; transition:border-color .15s, box-shadow .15s; outline:none;
+  }
+  input:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.12);}
+  .field.valid input{border-color:var(--good);}
+  .field.invalid input{border-color:var(--bad);}
+  .hint{font-size:0.78rem; margin-top:5px; color:var(--muted); min-height:16px;}
+  .field.invalid .hint{color:var(--bad);}
+  .field.valid .hint{color:var(--good);}
+  .strength{height:4px; border-radius:2px; background:var(--line); margin-top:8px; overflow:hidden;}
+  .strength-bar{height:100%; width:0%; background:var(--bad); transition:width .2s, background .2s;}
+  button{
+    width:100%; padding:12px; border:none; border-radius:6px; background:var(--accent);
+    color:#fff; font-size:0.95rem; font-weight:700; cursor:pointer; margin-top:6px;
+    transition:opacity .15s;
+  }
+  button:disabled{opacity:0.5; cursor:not-allowed;}
+  .success{
+    display:none; background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46;
+    padding:14px 16px; border-radius:8px; font-size:0.9rem; margin-top:20px;
+  }
+  .success.show{display:block;}
+  form.done .field, form.done button{display:none;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Create your account</h1>
+  <p class="sub">Join in under a minute — every field is checked as you type.</p>
+
+  <form id="signupForm" novalidate>
+    <div class="field" data-field="name">
+      <label for="name">Full name</label>
+      <input type="text" id="name" name="name" placeholder="Jordan Ade" autocomplete="name">
+      <div class="hint" id="name-hint"></div>
+    </div>
+
+    <div class="field" data-field="email">
+      <label for="email">Email address</label>
+      <input type="text" id="email" name="email" placeholder="you@example.com" autocomplete="email">
+      <div class="hint" id="email-hint"></div>
+    </div>
+
+    <div class="field" data-field="phone">
+      <label for="phone">Phone number</label>
+      <input type="text" id="phone" name="phone" placeholder="+1 555 123 4567" autocomplete="tel">
+      <div class="hint" id="phone-hint"></div>
+    </div>
+
+    <div class="field" data-field="password">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="At least 8 characters" autocomplete="new-password">
+      <div class="strength"><div class="strength-bar" id="strengthBar"></div></div>
+      <div class="hint" id="password-hint"></div>
+    </div>
+
+    <button type="submit" id="submitBtn" disabled>Create account</button>
+  </form>
+
+  <div class="success" id="successMsg">✓ Account created! Welcome aboard — check your email to confirm.</div>
+</div>
+
+<script>
+  const form = document.getElementById('signupForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const successMsg = document.getElementById('successMsg');
+
+  const fields = {
+    name: {
+      el: document.getElementById('name'),
+      hint: document.getElementById('name-hint'),
+      validate(v){
+        if(!v.trim()) return {valid:false, msg:'Name is required.'};
+        if(v.trim().length < 2) return {valid:false, msg:'Name is too short.'};
+        return {valid:true, msg:'Looks good.'};
+      }
+    },
+    email: {
+      el: document.getElementById('email'),
+      hint: document.getElementById('email-hint'),
+      validate(v){
+        if(!v.trim()) return {valid:false, msg:'Email is required.'};
+        const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+        return ok ? {valid:true, msg:'Looks good.'} : {valid:false, msg:'Enter a valid email address.'};
+      }
+    },
+    phone: {
+      el: document.getElementById('phone'),
+      hint: document.getElementById('phone-hint'),
+      validate(v){
+        if(!v.trim()) return {valid:false, msg:'Phone number is required.'};
+        const digits = v.replace(/\D/g,'');
+        return digits.length >= 7 ? {valid:true, msg:'Looks good.'} : {valid:false, msg:'Enter at least 7 digits.'};
+      }
+    },
+    password: {
+      el: document.getElementById('password'),
+      hint: document.getElementById('password-hint'),
+      validate(v){
+        if(!v) return {valid:false, msg:'Password is required.'};
+        if(v.length < 8) return {valid:false, msg:'Use at least 8 characters.'};
+        return {valid:true, msg: passwordStrengthLabel(v)};
+      }
+    }
+  };
+
+  function passwordScore(v){
+    let score = 0;
+    if(v.length >= 8) score++;
+    if(v.length >= 12) score++;
+    if(/[A-Z]/.test(v)) score++;
+    if(/[0-9]/.test(v)) score++;
+    if(/[^A-Za-z0-9]/.test(v)) score++;
+    return score; // 0-5
+  }
+  function passwordStrengthLabel(v){
+    const s = passwordScore(v);
+    if(s <= 1) return 'Weak — try adding a number or symbol.';
+    if(s <= 3) return 'Decent — add more variety for a stronger password.';
+    return 'Strong password.';
+  }
+  function updateStrengthBar(v){
+    const bar = document.getElementById('strengthBar');
+    const s = passwordScore(v);
+    const pct = Math.min(100, (s/5)*100);
+    bar.style.width = pct + '%';
+    bar.style.background = s <= 1 ? '#dc2626' : s <= 3 ? '#d97706' : '#16a34a';
+  }
+
+  function runValidation(key, showState){
+    const f = fields[key];
+    const result = f.validate(f.el.value);
+    const wrapper = f.el.closest('.field');
+    if(showState){
+      wrapper.classList.toggle('valid', result.valid);
+      wrapper.classList.toggle('invalid', !result.valid);
+      f.hint.textContent = result.msg;
+    }
+    return result.valid;
+  }
+
+  function checkAll(){
+    const allValid = Object.keys(fields).every(k => fields[k].validate(fields[k].el.value).valid);
+    submitBtn.disabled = !allValid;
+  }
+
+  Object.keys(fields).forEach(key => {
+    const f = fields[key];
+    f.el.addEventListener('input', () => {
+      if(key === 'password') updateStrengthBar(f.el.value);
+      // live feedback once the user has interacted, but only show error state after blur once
+      if(f.el.closest('.field').dataset.touched === 'true'){
+        runValidation(key, true);
+      }
+      checkAll();
+    });
+    f.el.addEventListener('blur', () => {
+      f.el.closest('.field').dataset.touched = 'true';
+      runValidation(key, true);
+    });
+    f.el.addEventListener('focus', () => {
+      f.el.closest('.field').classList.remove('invalid');
+    });
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    let allValid = true;
+    Object.keys(fields).forEach(key => {
+      fields[key].el.closest('.field').dataset.touched = 'true';
+      if(!runValidation(key, true)) allValid = false;
+    });
+    if(allValid){
+      form.classList.add('done');
+      successMsg.classList.add('show');
+    }
+  });
+</script>
+</body>
+</html>

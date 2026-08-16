@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Counter</title>
+<style>
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:#0e1420; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  .card{
+    background:#161d2b; border:1px solid #232c40; border-radius:16px;
+    padding:48px 56px; text-align:center; width:320px;
+  }
+  .label{color:#7c869c; font-size:0.8rem; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:18px;}
+  .count{
+    font-size:4.5rem; font-weight:700; color:#f6f3ec; line-height:1;
+    margin-bottom:28px; font-variant-numeric:tabular-nums;
+    transition:transform .12s;
+  }
+  .count.bump{transform:scale(1.12);}
+  .controls{display:flex; gap:10px;}
+  button{
+    flex:1; padding:14px 0; border:none; border-radius:8px; font-size:1.3rem;
+    cursor:pointer; font-weight:700; transition:opacity .15s, transform .1s;
+  }
+  button:active{transform:scale(0.95);}
+  button:disabled{opacity:0.35; cursor:not-allowed;}
+  #decrement{background:#232c40; color:#f6f3ec;}
+  #increment{background:#e8873a; color:#0e1420;}
+  #reset{
+    width:100%; margin-top:10px; background:none; border:1px solid #232c40;
+    color:#7c869c; font-size:0.85rem; padding:10px 0; font-weight:600;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="label">Current count</div>
+  <div class="count" id="count">0</div>
+  <div class="controls">
+    <button id="decrement" aria-label="Decrement">&minus;</button>
+    <button id="increment" aria-label="Increment">&plus;</button>
+  </div>
+  <button id="reset">Reset</button>
+</div>
+
+<script>
+  let count = 0;
+  const countEl = document.getElementById('count');
+  const decBtn = document.getElementById('decrement');
+  const incBtn = document.getElementById('increment');
+  const resetBtn = document.getElementById('reset');
+
+  function render(){
+    countEl.textContent = count;
+    decBtn.disabled = count <= 0;
+    countEl.classList.add('bump');
+    setTimeout(() => countEl.classList.remove('bump'), 120);
+  }
+
+  incBtn.addEventListener('click', () => {
+    count++;
+    render();
+  });
+
+  decBtn.addEventListener('click', () => {
+    if(count > 0){
+      count--;
+      render();
+    }
+  });
+
+  resetBtn.addEventListener('click', () => {
+    count = 0;
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>
